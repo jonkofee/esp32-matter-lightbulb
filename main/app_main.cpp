@@ -189,22 +189,13 @@ extern "C" void app_main()
 
     MEMORY_PROFILER_DUMP_HEAP_STAT("node created");
 
-    extended_color_light::config_t light_config;
+    on_off_light::config_t light_config;
     light_config.on_off.on_off = DEFAULT_POWER;
     light_config.on_off.features.lighting.start_up_on_off = nullptr;
-    light_config.level_control.current_level = DEFAULT_BRIGHTNESS;
-    light_config.level_control.on_level = DEFAULT_BRIGHTNESS;
-    light_config.level_control.features.lighting.start_up_current_level = DEFAULT_BRIGHTNESS;
-    light_config.color_control.color_mode = (uint8_t)ColorControl::ColorMode::kColorTemperature;
-    light_config.color_control.enhanced_color_mode = (uint8_t)ColorControl::ColorMode::kColorTemperature;
-    light_config.color_control.features.color_temperature.startup_color_temperature_mireds = nullptr;
-
     light_config.on_off.feature_flags = cluster::on_off::feature::lighting::get_id();
-    light_config.level_control.feature_flags = cluster::level_control::feature::lighting::get_id();
-    light_config.color_control.feature_flags = cluster::color_control::feature::color_temperature::get_id();
 
     // endpoint handles can be used to add/modify clusters.
-    endpoint_t *endpoint = extended_color_light::create(node, &light_config, ENDPOINT_FLAG_NONE, light_handle);
+    endpoint_t *endpoint = on_off_light::create(node, &light_config, ENDPOINT_FLAG_NONE, light_handle);
     ABORT_APP_ON_FAILURE(endpoint != nullptr, ESP_LOGE(TAG, "Failed to create extended color light endpoint"));
 
     light_endpoint_id = endpoint::get_id(endpoint);
