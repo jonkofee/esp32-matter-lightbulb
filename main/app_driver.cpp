@@ -16,6 +16,7 @@
 #include <device.h>
 #include <led_driver.h>
 #include <button_gpio.h>
+#include <driver/gpio.h>
 
 using namespace chip::app::Clusters;
 using namespace esp_matter;
@@ -26,7 +27,7 @@ extern uint16_t light_endpoint_id;
 /* Do any conversions/remapping for the actual value here */
 static esp_err_t app_driver_light_set_power(led_driver_handle_t handle, esp_matter_attr_val_t *val)
 {
-    return led_driver_set_power(handle, val->val.b);
+    return gpio_set_level(GPIO_NUM_25, val->val.u32);
 }
 
 static esp_err_t app_driver_light_set_brightness(led_driver_handle_t handle, esp_matter_attr_val_t *val)
@@ -138,10 +139,10 @@ esp_err_t app_driver_light_set_defaults(uint16_t endpoint_id)
 
 app_driver_handle_t app_driver_light_init()
 {
-    /* Initialize led */
-    led_driver_config_t config = led_driver_get_config();
-    led_driver_handle_t handle = led_driver_init(&config);
-    return (app_driver_handle_t)handle;
+    gpio_reset_pin(GPIO_NUM_25);
+    gpio_set_direction(GPIO_NUM_25, GPIO_MODE_OUTPUT);
+
+    return (app_driver_handle_t)NULL;
 }
 
 app_driver_handle_t app_driver_button_init()
@@ -149,13 +150,17 @@ app_driver_handle_t app_driver_button_init()
     /* Initialize button */
     button_handle_t handle = NULL;
     const button_config_t btn_cfg = {0};
-    const button_gpio_config_t btn_gpio_cfg = button_driver_get_config();
+    const button_gpio_config_t btn_gpio_cfg = {
+        .gpio_num = GPIO_NUM_12,
+        .active_level = 0,
+    };
 
     if (iot_button_new_gpio_device(&btn_cfg, &btn_gpio_cfg, &handle) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to create button device");
         return NULL;
     }
 
+    iot_button_register_cb(handle, BUTTON_PRESS_UP, NULL, app_driver_button_toggle_cb, NULL);
     iot_button_register_cb(handle, BUTTON_PRESS_DOWN, NULL, app_driver_button_toggle_cb, NULL);
     return (app_driver_handle_t)handle;
 }
