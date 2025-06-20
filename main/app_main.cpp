@@ -26,17 +26,6 @@
 #include <app/server/CommissioningWindowManager.h>
 #include <app/server/Server.h>
 
-#ifdef CONFIG_ENABLE_SET_CERT_DECLARATION_API
-#include <esp_matter_providers.h>
-#include <lib/support/Span.h>
-#ifdef CONFIG_SEC_CERT_DAC_PROVIDER
-#include <platform/ESP32/ESP32SecureCertDACProvider.h>
-#elif defined(CONFIG_FACTORY_PARTITION_DAC_PROVIDER)
-#include <platform/ESP32/ESP32FactoryDataProvider.h>
-#endif
-using namespace chip::DeviceLayer;
-#endif
-
 static const char *TAG = "app_main";
 uint16_t light_endpoint_id = 0;
 
@@ -47,21 +36,6 @@ using namespace chip::app::Clusters;
 
 constexpr auto k_timeout_seconds = 300;
 
-#ifdef CONFIG_ENABLE_SET_CERT_DECLARATION_API
-extern const uint8_t cd_start[] asm("_binary_certification_declaration_der_start");
-extern const uint8_t cd_end[] asm("_binary_certification_declaration_der_end");
-
-const chip::ByteSpan cdSpan(cd_start, static_cast<size_t>(cd_end - cd_start));
-#endif // CONFIG_ENABLE_SET_CERT_DECLARATION_API
-
-#if CONFIG_ENABLE_ENCRYPTED_OTA
-extern const char decryption_key_start[] asm("_binary_esp_image_encryption_key_pem_start");
-extern const char decryption_key_end[] asm("_binary_esp_image_encryption_key_pem_end");
-
-static const char *s_decryption_key = decryption_key_start;
-static const uint16_t s_decryption_key_len = decryption_key_end - decryption_key_start;
-#endif // CONFIG_ENABLE_ENCRYPTED_OTA
-
 static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
 {
     switch (event->Type) {
@@ -71,7 +45,6 @@ static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
 
     case chip::DeviceLayer::DeviceEventType::kCommissioningComplete:
         ESP_LOGI(TAG, "Commissioning complete");
-        MEMORY_PROFILER_DUMP_HEAP_STAT("commissioning complete");
         break;
 
     case chip::DeviceLayer::DeviceEventType::kFailSafeTimerExpired:
@@ -88,7 +61,6 @@ static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
 
     case chip::DeviceLayer::DeviceEventType::kCommissioningWindowOpened:
         ESP_LOGI(TAG, "Commissioning window opened");
-        MEMORY_PROFILER_DUMP_HEAP_STAT("commissioning window opened");
         break;
 
     case chip::DeviceLayer::DeviceEventType::kCommissioningWindowClosed:
@@ -132,7 +104,6 @@ static void app_event_cb(const ChipDeviceEvent *event, intptr_t arg)
 
     case chip::DeviceLayer::DeviceEventType::kBLEDeinitialized:
         ESP_LOGI(TAG, "BLE deinitialized and memory reclaimed");
-        MEMORY_PROFILER_DUMP_HEAP_STAT("BLE deinitialized");
         break;
 
     default:
@@ -173,8 +144,6 @@ extern "C" void app_main()
     /* Initialize the ESP NVS layer */
     nvs_flash_init();
 
-    MEMORY_PROFILER_DUMP_HEAP_STAT("Bootup");
-
     /* Initialize driver */
     app_driver_handle_t light_handle = app_driver_light_init();
     app_driver_handle_t button_handle = app_driver_button_init();
@@ -182,12 +151,8 @@ extern "C" void app_main()
 
     /* Create a Matter node and add the mandatory Root Node device type on endpoint 0 */
     node::config_t node_config;
-
-    // node handle can be used to add/modify other endpoints.
     node_t *node = node::create(&node_config, app_attribute_update_cb, app_identification_cb);
     ABORT_APP_ON_FAILURE(node != nullptr, ESP_LOGE(TAG, "Failed to create Matter node"));
-
-    MEMORY_PROFILER_DUMP_HEAP_STAT("node created");
 
     on_off_light::config_t light_config;
     light_config.on_off.on_off = DEFAULT_POWER;
@@ -230,41 +195,11 @@ extern "C" void app_main()
     set_openthread_platform_config(&config);
 #endif
 
-#ifdef CONFIG_ENABLE_SET_CERT_DECLARATION_API
-    auto * dac_provider = get_dac_provider();
-#ifdef CONFIG_SEC_CERT_DAC_PROVIDER
-    static_cast<ESP32SecureCertDACProvider *>(dac_provider)->SetCertificationDeclaration(cdSpan);
-#elif defined(CONFIG_FACTORY_PARTITION_DAC_PROVIDER)
-    static_cast<ESP32FactoryDataProvider *>(dac_provider)->SetCertificationDeclaration(cdSpan);
-#endif
-#endif // CONFIG_ENABLE_SET_CERT_DECLARATION_API
-
     /* Matter start */
     err = esp_matter::start(app_event_cb);
     ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to start Matter, err:%d", err));
 
-    MEMORY_PROFILER_DUMP_HEAP_STAT("matter started");
-
     /* Starting driver with default values */
     app_driver_light_set_defaults(light_endpoint_id);
 
-#if CONFIG_ENABLE_ENCRYPTED_OTA
-    err = esp_matter_ota_requestor_encrypted_init(s_decryption_key, s_decryption_key_len);
-    ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to initialized the encrypted OTA, err: %d", err));
-#endif // CONFIG_ENABLE_ENCRYPTED_OTA
-
-#if CONFIG_ENABLE_CHIP_SHELL
-    esp_matter::console::diagnostics_register_commands();
-    esp_matter::console::wifi_register_commands();
-    esp_matter::console::factoryreset_register_commands();
-#if CONFIG_OPENTHREAD_CLI
-    esp_matter::console::otcli_register_commands();
-#endif
-    esp_matter::console::init();
-#endif
-
-    while (true) {
-        MEMORY_PROFILER_DUMP_HEAP_STAT("Idle");
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
-    }
 }
