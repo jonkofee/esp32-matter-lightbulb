@@ -27,7 +27,8 @@
 #include <app/server/Server.h>
 
 static const char *TAG = "app_main";
-uint16_t light_endpoint_id = 0;
+uint16_t light1_endpoint_id = 0;
+uint16_t light2_endpoint_id = 0;
 
 using namespace esp_matter;
 using namespace esp_matter::attribute;
@@ -145,36 +146,60 @@ extern "C" void app_main()
     nvs_flash_init();
 
     /* Initialize driver */
-    app_driver_handle_t light_handle = app_driver_light_init();
-    app_driver_handle_t button_handle = app_driver_button_init();
+    app_driver_handle_t light1_handle = app_driver_light1_init();
+    app_driver_handle_t light2_handle = app_driver_light2_init();
+    app_driver_handle_t button1_handle = app_driver_button2_init();
 
     /* Create a Matter node and add the mandatory Root Node device type on endpoint 0 */
     node::config_t node_config;
     node_t *node = node::create(&node_config, app_attribute_update_cb, app_identification_cb);
     ABORT_APP_ON_FAILURE(node != nullptr, ESP_LOGE(TAG, "Failed to create Matter node"));
 
-    on_off_light::config_t light_config;
-    light_config.on_off.on_off = DEFAULT_POWER;
-    light_config.on_off.features.lighting.start_up_on_off = nullptr;
-    light_config.on_off.feature_flags = cluster::on_off::feature::lighting::get_id();
+    on_off_light::config_t light1_config;
+    light1_config.on_off.on_off = DEFAULT_POWER;
+    light1_config.on_off.features.lighting.start_up_on_off = nullptr;
+    light1_config.on_off.feature_flags = cluster::on_off::feature::lighting::get_id();
 
     // endpoint handles can be used to add/modify clusters.
-    endpoint_t *endpoint = on_off_light::create(node, &light_config, ENDPOINT_FLAG_NONE, light_handle);
-    ABORT_APP_ON_FAILURE(endpoint != nullptr, ESP_LOGE(TAG, "Failed to create extended color light endpoint"));
+    endpoint_t *ligth1_endpoint = on_off_light::create(node, &light1_config, ENDPOINT_FLAG_NONE, light1_handle);
+    ABORT_APP_ON_FAILURE(ligth1_endpoint != nullptr, ESP_LOGE(TAG, "Failed to create extended color light ligth1_endpoint"));
 
-    light_endpoint_id = endpoint::get_id(endpoint);
-    ESP_LOGI(TAG, "Light created with endpoint_id %d", light_endpoint_id);
+    light1_endpoint_id = endpoint::get_id(ligth1_endpoint);
+    ESP_LOGI(TAG, "Light created with endpoint_id %d", light1_endpoint_id);
 
     /* Mark deferred persistence for some attributes that might be changed rapidly */
-    attribute_t *current_level_attribute = attribute::get(light_endpoint_id, LevelControl::Id, LevelControl::Attributes::CurrentLevel::Id);
-    attribute::set_deferred_persistence(current_level_attribute);
+    attribute_t *light1_current_level_attribute = attribute::get(light1_endpoint_id, LevelControl::Id, LevelControl::Attributes::CurrentLevel::Id);
+    attribute::set_deferred_persistence(light1_current_level_attribute);
 
-    attribute_t *current_x_attribute = attribute::get(light_endpoint_id, ColorControl::Id, ColorControl::Attributes::CurrentX::Id);
-    attribute::set_deferred_persistence(current_x_attribute);
-    attribute_t *current_y_attribute = attribute::get(light_endpoint_id, ColorControl::Id, ColorControl::Attributes::CurrentY::Id);
-    attribute::set_deferred_persistence(current_y_attribute);
-    attribute_t *color_temp_attribute = attribute::get(light_endpoint_id, ColorControl::Id, ColorControl::Attributes::ColorTemperatureMireds::Id);
-    attribute::set_deferred_persistence(color_temp_attribute);
+    attribute_t *light1_current_x_attribute = attribute::get(light1_endpoint_id, ColorControl::Id, ColorControl::Attributes::CurrentX::Id);
+    attribute::set_deferred_persistence(light1_current_x_attribute);
+    attribute_t *light1_current_y_attribute = attribute::get(light1_endpoint_id, ColorControl::Id, ColorControl::Attributes::CurrentY::Id);
+    attribute::set_deferred_persistence(light1_current_y_attribute);
+    attribute_t *light1_color_temp_attribute = attribute::get(light1_endpoint_id, ColorControl::Id, ColorControl::Attributes::ColorTemperatureMireds::Id);
+    attribute::set_deferred_persistence(light1_color_temp_attribute);
+
+    on_off_light::config_t light2_config;
+    light2_config.on_off.on_off = DEFAULT_POWER;
+    light2_config.on_off.features.lighting.start_up_on_off = nullptr;
+    light2_config.on_off.feature_flags = cluster::on_off::feature::lighting::get_id();
+
+    // endpoint handles can be used to add/modify clusters.
+    endpoint_t *ligth2_endpoint = on_off_light::create(node, &light2_config, ENDPOINT_FLAG_NONE, light2_handle);
+    ABORT_APP_ON_FAILURE(ligth1_endpoint != nullptr, ESP_LOGE(TAG, "Failed to create extended color light ligth2_endpoint"));
+
+    light2_endpoint_id = endpoint::get_id(ligth2_endpoint);
+    ESP_LOGI(TAG, "Light created with endpoint_id %d", light2_endpoint_id);
+
+    /* Mark deferred persistence for some attributes that might be changed rapidly */
+    attribute_t *light2_current_level_attribute = attribute::get(light2_endpoint_id, LevelControl::Id, LevelControl::Attributes::CurrentLevel::Id);
+    attribute::set_deferred_persistence(light2_current_level_attribute);
+
+    attribute_t *light2_current_x_attribute = attribute::get(light2_endpoint_id, ColorControl::Id, ColorControl::Attributes::CurrentX::Id);
+    attribute::set_deferred_persistence(light2_current_x_attribute);
+    attribute_t *light2_current_y_attribute = attribute::get(light2_endpoint_id, ColorControl::Id, ColorControl::Attributes::CurrentY::Id);
+    attribute::set_deferred_persistence(light2_current_y_attribute);
+    attribute_t *light2_color_temp_attribute = attribute::get(light2_endpoint_id, ColorControl::Id, ColorControl::Attributes::ColorTemperatureMireds::Id);
+    attribute::set_deferred_persistence(light2_color_temp_attribute);
 
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD && CHIP_DEVICE_CONFIG_ENABLE_WIFI_STATION
     // Enable secondary network interface
@@ -199,6 +224,7 @@ extern "C" void app_main()
     ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to start Matter, err:%d", err));
 
     /* Starting driver with default values */
-    app_driver_light_set_defaults(light_endpoint_id);
+    app_driver_light1_set_defaults(light1_endpoint_id);
+    app_driver_light2_set_defaults(light2_endpoint_id);
 
 }
