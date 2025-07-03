@@ -154,7 +154,7 @@ extern "C" void app_main()
     ABORT_APP_ON_FAILURE(node != nullptr, ESP_LOGE(TAG, "Failed to create Matter node"));
 
     on_off_light::config_t light_config;
-    light_config.on_off.on_off = DEFAULT_POWER;
+    light_config.on_off.on_off = false;
     light_config.on_off.features.lighting.start_up_on_off = nullptr;
     light_config.on_off.feature_flags = cluster::on_off::feature::lighting::get_id();
 

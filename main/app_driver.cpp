@@ -153,6 +153,7 @@ app_driver_handle_t app_driver_button_init()
     const button_gpio_config_t btn_gpio_cfg = {
         .gpio_num = GPIO_NUM_12,
         .active_level = 0,
+        .disable_pull = false,
     };
 
     if (iot_button_new_gpio_device(&btn_cfg, &btn_gpio_cfg, &handle) != ESP_OK) {
