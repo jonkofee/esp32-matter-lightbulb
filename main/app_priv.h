@@ -29,6 +29,15 @@ typedef void *app_driver_handle_t;
  */
 app_driver_handle_t app_driver_light_init();
 
+/** Initialize the button driver
+ *
+ * This initializes the button driver associated with the selected board.
+ *
+ * @return Handle on success.
+ * @return NULL in case of failure.
+ */
+app_driver_handle_t app_driver_button_init();
+
 /** Driver Update
  *
  * This API should be called to update the driver for the attribute being updated.
