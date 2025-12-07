@@ -26,8 +26,11 @@
 #include <app/server/CommissioningWindowManager.h>
 #include <app/server/Server.h>
 
+bool is_need_2_light = true;
+
 static const char *TAG = "app_main";
-uint16_t light_endpoint_id = 0;
+uint16_t light1_endpoint_id = 0;
+uint16_t light2_endpoint_id = 0;
 
 using namespace esp_matter;
 using namespace esp_matter::attribute;
@@ -150,24 +153,41 @@ extern "C" void app_main()
     ESP_ERROR_CHECK(err);
 
     /* Initialize driver */
-    app_driver_handle_t light_handle = app_driver_light_init();
-    app_driver_handle_t button_handle = app_driver_button_init();
+    app_driver_handle_t light1_handle = app_driver_light1_init();
+    app_driver_handle_t button1_handle = app_driver_button1_init();
 
     /* Create a Matter node and add the mandatory Root Node device type on endpoint 0 */
     node::config_t node_config;
     node_t *node = node::create(&node_config, app_attribute_update_cb, app_identification_cb);
     ABORT_APP_ON_FAILURE(node != nullptr, ESP_LOGE(TAG, "Failed to create Matter node"));
 
-    on_off_light::config_t light_config;
-    light_config.on_off.on_off = DEFAULT_POWER;
-    light_config.on_off_lighting.start_up_on_off = nullptr;
+    on_off_light::config_t light1_config;
+    light1_config.on_off.on_off = DEFAULT_POWER;
+    light1_config.on_off_lighting.start_up_on_off = nullptr;
 
     // endpoint handles can be used to add/modify clusters.
-    endpoint_t *endpoint = on_off_light::create(node, &light_config, ENDPOINT_FLAG_NONE, light_handle);
-    ABORT_APP_ON_FAILURE(endpoint != nullptr, ESP_LOGE(TAG, "Failed to create light endpoint"));
+    endpoint_t *light1_endpoint = on_off_light::create(node, &light1_config, ENDPOINT_FLAG_NONE, light1_handle);
+    ABORT_APP_ON_FAILURE(light1_endpoint != nullptr, ESP_LOGE(TAG, "Failed to create light1 endpoint"));
 
-    light_endpoint_id = endpoint::get_id(endpoint);
-    ESP_LOGI(TAG, "Light created with endpoint_id %d", light_endpoint_id);
+    light1_endpoint_id = endpoint::get_id(light1_endpoint);
+    ESP_LOGI(TAG, "Light created with endpoint_id %d", light1_endpoint_id);
+
+	if (is_need_2_light) {
+		/* Initialize driver */
+    	app_driver_handle_t light2_handle = app_driver_light2_init();
+   		app_driver_handle_t button2_handle = app_driver_button2_init();
+
+		on_off_light::config_t light2_config;
+    	light2_config.on_off.on_off = DEFAULT_POWER;
+    	light2_config.on_off_lighting.start_up_on_off = nullptr;
+
+    	// endpoint handles can be used to add/modify clusters.
+    	endpoint_t *light2_endpoint = on_off_light::create(node, &light2_config, ENDPOINT_FLAG_NONE, light2_handle);
+    	ABORT_APP_ON_FAILURE(light2_endpoint != nullptr, ESP_LOGE(TAG, "Failed to create light2 endpoint"));
+
+    	light2_endpoint_id = endpoint::get_id(light2_endpoint);
+    	ESP_LOGI(TAG, "Light created with endpoint_id %d", light2_endpoint_id);
+	}
 
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD && CHIP_DEVICE_CONFIG_ENABLE_WIFI_STATION
     // Enable secondary network interface
@@ -192,6 +212,9 @@ extern "C" void app_main()
     ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to start Matter, err:%d", err));
 
     /* Starting driver with default values */
-    app_driver_light_set_defaults(light_endpoint_id);
+    app_driver_light1_set_defaults(light1_endpoint_id);
 
+	if (is_need_2_light) {
+		app_driver_light2_set_defaults(light2_endpoint_id);
+	}
 }
