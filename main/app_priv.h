@@ -27,8 +27,7 @@ typedef void *app_driver_handle_t;
  * @return Handle on success.
  * @return NULL in case of failure.
  */
-app_driver_handle_t app_driver_light1_init();
-app_driver_handle_t app_driver_light2_init();
+app_driver_handle_t app_driver_light_init();
 
 /** Initialize the button driver
  *
@@ -37,8 +36,7 @@ app_driver_handle_t app_driver_light2_init();
  * @return Handle on success.
  * @return NULL in case of failure.
  */
-app_driver_handle_t app_driver_button1_init();
-app_driver_handle_t app_driver_button2_init();
+app_driver_handle_t app_driver_button_init();
 
 /** Driver Update
  *
@@ -65,8 +63,7 @@ esp_err_t app_driver_attribute_update(app_driver_handle_t driver_handle, uint16_
  * @return ESP_OK on success.
  * @return error in case of failure.
  */
-esp_err_t app_driver_light1_set_defaults(uint16_t endpoint_id);
-esp_err_t app_driver_light2_set_defaults(uint16_t endpoint_id);
+esp_err_t app_driver_light_set_defaults(uint16_t endpoint_id);
 
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD
 #define ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG()                                           \
