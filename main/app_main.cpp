@@ -14,6 +14,8 @@
 #include <esp_matter_console.h>
 #include <esp_matter_ota.h>
 
+#include <app_reset.h>
+
 #include <common_macros.h>
 #include <log_heap_numbers.h>
 
@@ -152,6 +154,10 @@ extern "C" void app_main()
     /* Initialize driver */
     app_driver_handle_t light_handle = app_driver_light_init();
     app_driver_handle_t button_handle = app_driver_button_init();
+
+    // Reset button
+    app_driver_handle_t reset_button_handle = app_driver_reset_button_init();
+    app_reset_button_register(reset_button_handle);
 
     /* Create a Matter node and add the mandatory Root Node device type on endpoint 0 */
     node::config_t node_config;

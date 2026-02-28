@@ -35,6 +35,9 @@ static const gpio_num_t LIGHT_GPIO = GPIO_NUM_25;
 /* GPIO для кнопки (выключатель). Каждый раз когда меняется состояние этого ввода - нужно переключить состояние лампы */
 static const gpio_num_t BUTTON_GPIO = GPIO_NUM_26;
 
+/* GPIO для кнопки сброса настроек до заводских */
+static const gpio_num_t RESET_BUTTON_GPIO = GPIO_NUM_0;
+
 /* Низкоуровневое управление питанием лампы по GPIO */
 static esp_err_t app_driver_light_set_power(bool on)
 {
@@ -170,6 +173,24 @@ app_driver_handle_t app_driver_button_init()
 
     iot_button_register_cb(btn, BUTTON_PRESS_UP, NULL, app_driver_button_toggle_cb, NULL);
     iot_button_register_cb(btn, BUTTON_PRESS_DOWN, NULL, app_driver_button_toggle_cb, NULL);
+
+    return (app_driver_handle_t)btn;
+}
+
+app_driver_handle_t app_driver_reset_button_init()
+{
+    /* Initialize button */
+    button_handle_t btn;
+    const button_gpio_config_t btn_gpio_cfg = {
+        .gpio_num = RESET_BUTTON_GPIO,
+        .active_level = 0,
+    };
+    const button_config_t btn_cfg = {};
+
+    if (iot_button_new_gpio_device(&btn_cfg, &btn_gpio_cfg, &btn) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to create reset button device");
+        return NULL;
+    }
 
     return (app_driver_handle_t)btn;
 }
