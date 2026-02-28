@@ -30,8 +30,8 @@ extern uint16_t light_endpoint_id;
 /* GPIO для нагрузки (реле / лампа) */
 static const gpio_num_t LIGHT_GPIO = GPIO_NUM_25;
 
-/* GPIO для настенного выключателя */
-static const gpio_num_t SWITCH_GPIO = GPIO_NUM_12;
+/* GPIO для кнопки (выключатель). Каждый раз когда меняется состояние этого ввода - нужно переключить состояние лампы */
+static const gpio_num_t BUTTON_GPIO = GPIO_NUM_25;
 
 /* Очередь событий от ISR выключателя */
 static QueueHandle_t s_switch_evt_queue = nullptr;
@@ -129,7 +129,7 @@ app_driver_handle_t app_driver_button_init()
     button_handle_t handle = NULL;
     const button_config_t btn_cfg = {0};
     const button_gpio_config_t btn_gpio_cfg = {
-        .gpio_num = GPIO_NUM_26,
+        .gpio_num = BUTTON_GPIO,
         .active_level = 0,
         .disable_pull = false,
     };
