@@ -27,6 +27,7 @@
 
 #include <app/server/CommissioningWindowManager.h>
 #include <app/server/Server.h>
+#include <driver/gpio.h>
 
 static const char *TAG = "app_main";
 uint16_t light_endpoint_id = 0;
@@ -119,6 +120,26 @@ static esp_err_t app_identification_cb(identification::callback_type_t type, uin
                                        uint8_t effect_variant, void *priv_data)
 {
     ESP_LOGI(TAG, "Identification callback: type: %u, effect: %u, variant: %u", type, effect_id, effect_variant);
+
+    // Мигаем светодиодом на пине GPIO2 несколько раз для идентификации устройства
+    const gpio_num_t IDENT_LED_GPIO = GPIO_NUM_2;
+
+    // Инициализация GPIO2 как выхода
+    gpio_reset_pin(IDENT_LED_GPIO);
+    gpio_set_direction(IDENT_LED_GPIO, GPIO_MODE_OUTPUT);
+
+    // Параметры мигания
+    const int blink_count = 5;
+    const int on_time_ms = 200;
+    const int off_time_ms = 200;
+
+    for (int i = 0; i < blink_count; ++i) {
+        gpio_set_level(IDENT_LED_GPIO, 1);
+        vTaskDelay(pdMS_TO_TICKS(on_time_ms));
+        gpio_set_level(IDENT_LED_GPIO, 0);
+        vTaskDelay(pdMS_TO_TICKS(off_time_ms));
+    }
+
     return ESP_OK;
 }
 
