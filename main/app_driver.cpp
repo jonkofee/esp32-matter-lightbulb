@@ -31,7 +31,7 @@ extern uint16_t light_endpoint_id;
 static const gpio_num_t LIGHT_GPIO = GPIO_NUM_25;
 
 /* GPIO для кнопки (выключатель). Каждый раз когда меняется состояние этого ввода - нужно переключить состояние лампы */
-static const gpio_num_t BUTTON_GPIO = GPIO_NUM_25;
+static const gpio_num_t BUTTON_GPIO = GPIO_NUM_26;
 
 /* Очередь событий от ISR выключателя */
 static QueueHandle_t s_switch_evt_queue = nullptr;
