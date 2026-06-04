@@ -175,6 +175,7 @@ extern "C" void app_main()
     /* Initialize driver */
     app_driver_handle_t light_handle = app_driver_light_init();
     app_driver_handle_t button_handle = app_driver_button_init();
+    app_driver_handle_t button_2_handle = app_driver_button_2_init();
 
     // Reset button
     app_driver_handle_t reset_button_handle = app_driver_reset_button_init();

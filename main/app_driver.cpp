@@ -30,10 +30,16 @@ static const char *TAG = "app_driver";
 extern uint16_t light_endpoint_id;
 
 /* GPIO для нагрузки (реле / лампа) */
-static const gpio_num_t LIGHT_GPIO = GPIO_NUM_25;
+static const gpio_num_t LIGHT_GPIO = GPIO_NUM_17;
+
+/* Выключатели рассчитаны на тип с фиксацией (latching): каждое переключение даёт один фронт = один toggle.
+ * Кнопки без фиксации (momentary) тут работать не будут — нажатие даст два фронта (down+up) = два toggle = нет эффекта. */
 
 /* GPIO для кнопки (выключатель). Каждый раз когда меняется состояние этого ввода - нужно переключить состояние лампы */
 static const gpio_num_t BUTTON_GPIO = GPIO_NUM_26;
+
+/* GPIO для второго выключателя. Работает аналогично первому - переключает ту же лампу */
+static const gpio_num_t BUTTON_GPIO_2 = GPIO_NUM_25;
 
 /* GPIO для кнопки сброса настроек до заводских */
 static const gpio_num_t RESET_BUTTON_GPIO = GPIO_NUM_0;
@@ -95,18 +101,19 @@ esp_err_t app_driver_light_set_defaults(uint16_t endpoint_id)
 
 app_driver_handle_t app_driver_light_init()
 {
-    gpio_reset_pin(GPIO_NUM_25);
-    gpio_set_direction(GPIO_NUM_25, GPIO_MODE_OUTPUT);
+    /* Настраиваем пин нагрузки как выход, иначе gpio_set_level() не управляет реле/лампой */
+    gpio_reset_pin(LIGHT_GPIO);
+    gpio_set_direction(LIGHT_GPIO, GPIO_MODE_OUTPUT);
 
     return (app_driver_handle_t)NULL;
 }
 
-void force_pullup_button_pin() {
+void force_pullup_button_pin(gpio_num_t gpio) {
     /* Явно настраиваем подтяжки: включаем pullup, выключаем pulldown */
     gpio_config_t io_conf = {};
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask = 1ULL << BUTTON_GPIO;
+    io_conf.pin_bit_mask = 1ULL << gpio;
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE; // отключить внутреннюю подтяжку к GND
     io_conf.pull_up_en   = GPIO_PULLUP_ENABLE;    // включить внутреннюю подтяжку к VCC
     ESP_ERROR_CHECK(gpio_config(&io_conf));
@@ -139,15 +146,15 @@ static void app_driver_button_toggle_cb(void *arg, void *data)
     }
 }
 
-app_driver_handle_t app_driver_button_init()
+static app_driver_handle_t app_driver_button_init_gpio(gpio_num_t gpio)
 {
-    force_pullup_button_pin();
+    force_pullup_button_pin(gpio);
 
     /* Initialize button */
     button_handle_t btn;
     // Определяем активный уровень как противоположный текущему состоянию пина,
     // чтобы срабатывание происходило по фронту изменения
-    int current_level = gpio_get_level(BUTTON_GPIO);
+    int current_level = gpio_get_level(gpio);
     uint8_t active_level;
     if (current_level == 0) {
         active_level = 1;
@@ -156,10 +163,10 @@ app_driver_handle_t app_driver_button_init()
     }
 
     ESP_LOGI(TAG, "Button init: BUTTON_GPIO=%d, current_level=%d, active_level=%u",
-             (int)BUTTON_GPIO, current_level, (unsigned)active_level);
+             (int)gpio, current_level, (unsigned)active_level);
 
     const button_gpio_config_t btn_gpio_cfg = {
-        .gpio_num = BUTTON_GPIO,
+        .gpio_num = gpio,
         .active_level = active_level,
     };
     const button_config_t btn_cfg = {};
@@ -169,12 +176,23 @@ app_driver_handle_t app_driver_button_init()
         return NULL;
     }
 
-    force_pullup_button_pin();
+    force_pullup_button_pin(gpio);
 
+    /* Реагируем на оба фронта: для latching-выключателя любое его переключение = один фронт = один toggle лампы */
     iot_button_register_cb(btn, BUTTON_PRESS_UP, NULL, app_driver_button_toggle_cb, NULL);
     iot_button_register_cb(btn, BUTTON_PRESS_DOWN, NULL, app_driver_button_toggle_cb, NULL);
 
     return (app_driver_handle_t)btn;
+}
+
+app_driver_handle_t app_driver_button_init()
+{
+    return app_driver_button_init_gpio(BUTTON_GPIO);
+}
+
+app_driver_handle_t app_driver_button_2_init()
+{
+    return app_driver_button_init_gpio(BUTTON_GPIO_2);
 }
 
 app_driver_handle_t app_driver_reset_button_init()

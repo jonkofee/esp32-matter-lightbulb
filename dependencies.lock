@@ -33,6 +33,13 @@ dependencies:
       registry_url: https://components.espressif.com
       type: service
     version: 1.1.1
+  espressif/esp-serial-flasher:
+    component_hash: dcc42a16712a1a636509cf0bf90e14032d7f2141784b533613b267b6aa318d52
+    dependencies: []
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 0.0.11
   espressif/esp_delta_ota:
     component_hash: 147161b602ef51e9f6649eb6d90c4d4ac3c94228cb264fa0e68be7877180462d
     dependencies:
@@ -103,6 +110,20 @@ dependencies:
       registry_url: https://components.espressif.com/
       type: service
     version: 1.3.2
+  espressif/esp_rcp_update:
+    component_hash: 37f535edd527a45faeaad649c0c56af36e5399074e52d83f0990fce466844dde
+    dependencies:
+    - name: espressif/esp-serial-flasher
+      registry_url: https://components.espressif.com
+      require: private
+      version: ~0.0.0
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.3.1
   espressif/esp_secure_cert_mgr:
     component_hash: 054e3b074b5cd50cacfcbdb5e7ccc2b4d6d26c1016268297c6027897e28928ca
     dependencies:
@@ -179,17 +200,18 @@ dependencies:
   idf:
     source:
       type: idf
-    version: 5.5.4
+    version: 5.4.1
 direct_dependencies:
 - espressif/button
 - espressif/esp_delta_ota
 - espressif/esp_encrypted_img
 - espressif/esp_insights
+- espressif/esp_rcp_update
 - espressif/esp_secure_cert_mgr
 - espressif/json_generator
 - espressif/json_parser
 - espressif/led_strip
 - espressif/mdns
-manifest_hash: 5ada0db23617b8f477edfb52e5154a054c6eb0315857e6c8a9b40da2f3d54732
+manifest_hash: b5106cf949f36d050d853a30bea1c5a460b96559dfb695e483bf249eb2951b8c
 target: esp32
 version: 2.0.0
